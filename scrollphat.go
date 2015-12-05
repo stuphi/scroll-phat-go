@@ -12,6 +12,8 @@ const CMD_SET_MODE = 0x00
 const CMD_SET_BRIGHTNESS = 0x19
 const MODE_5X11 = 3  //0b00000011
 
+
+
 type ScrollPhat struct {
     buffer []byte
     device hwio.I2CDevice
@@ -76,6 +78,16 @@ func main() {
 
     var sf ScrollPhat
 
+    letters := map[string][]byte{
+        "A": {0x1E, 0x09, 0x1E, 0x00},
+        "B": {0x1F, 0x15, 0x0A, 0x00},
+        "C": {0x0E, 0x11, 0x0A, 0x00},
+        "D": {0x1F, 0x11, 0x0E, 0x00},
+        "E": {0x1F, 0x15, 0x15, 0x00},
+        "F": {0x1F, 0x05, 0x05, 0x00},
+
+    }
+
     sf.Init()
 
     //sf.buffer = []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10 }
@@ -84,11 +96,26 @@ func main() {
                        0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
                        0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
                    }
-    for i:=0;i<=100;i++ {
+    for i:=0;i<=32;i++ {
         sf.offset = sf.offset + 1
         sf.Update()
-        time.Sleep(500 * time.Millisecond)
+        time.Sleep(100 * time.Millisecond)
     }
+
+    sf.buffer = letters["A"]
+    sf.buffer = append(sf.buffer, letters["B"]...)
+    sf.buffer = append(sf.buffer, letters["C"]...)
+    sf.buffer = append(sf.buffer, letters["D"]...)
+    sf.buffer = append(sf.buffer, letters["E"]...)
+    sf.buffer = append(sf.buffer, letters["F"]...)
+    sf.offset = 0
+    for i:=0;i<=64;i++ {
+        sf.offset = sf.offset + 1
+        sf.Update()
+        time.Sleep(100 * time.Millisecond)
+    }
+
+
 
     sf.buffer = []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }
     sf.offset = 0
