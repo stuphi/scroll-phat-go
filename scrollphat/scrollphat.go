@@ -1,11 +1,10 @@
-package main
+package scrollphat
 
 import (
     "fmt"
 //    "errors"
     "github.com/mrmorphic/hwio"
     "strings"
-    "time"
 )
 
 const I2C_ADDR = 0x60
@@ -16,9 +15,9 @@ const MODE_5X11 = 3  //0b00000011
 
 
 type ScrollPhat struct {
-    buffer []byte
+    Buffer []byte
     device hwio.I2CDevice
-    offset int
+    Offset int
 }
 
 func (s *ScrollPhat) Init() {
@@ -47,20 +46,20 @@ func (s *ScrollPhat) Init() {
     if e != nil {
         fmt.Printf("could not set brightness: %s\n", e)
     }
-
-    s.offset = 0
+    s.Buffer = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+    s.Offset = 0
 }
 
 func (s *ScrollPhat) Update() {
     var window []byte
-    if s.offset > len(s.buffer){
-        s.offset = 0
+    if s.Offset > len(s.Buffer){
+        s.Offset = 0
     }
-    if s.offset + 11 <= len(s.buffer) {
-        window = s.buffer[s.offset:s.offset + 11]
+    if s.Offset + 11 <= len(s.Buffer) {
+        window = s.Buffer[s.Offset:s.Offset + 11]
     } else {
-        window = s.buffer[s.offset:]
-        window = append(window, s.buffer[:11 - len(window)]...)
+        window = s.Buffer[s.Offset:]
+        window = append(window, s.Buffer[:11 - len(window)]...)
     }
     //window = append(window, 0xFF)
 
@@ -75,7 +74,15 @@ func (s *ScrollPhat) Update() {
     }
 }
 
-func stringToBuf(s string) ([]byte){
+func (s *ScrollPhat) SetPixel(x, y, val uint) {
+    if val == 1 {
+        s.Buffer[x] |= (1 << y)
+    } else {
+        s.Buffer[x] &= ^(1 << y)
+    }
+}
+
+func StringToBuf(s string) ([]byte){
     
     var ret []byte
     var c byte
@@ -132,37 +139,3 @@ func stringToBuf(s string) ([]byte){
 
     return ret
 }
-
-func main() {
-
-    var sf ScrollPhat
-
-    sf.Init()
-
-    //sf.buffer = []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10 }
-    sf.buffer = []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-                       0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
-                       0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-                       0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
-                   }
-    for i:=0;i<=32;i++ {
-        sf.offset = sf.offset + 1
-        sf.Update()
-        time.Sleep(100 * time.Millisecond)
-    }
-
-    sf.buffer = stringToBuf("ABcdeFGhIJklmnopqrstuvwxyz1234567890:.-")
-    sf.offset = 0
-    for i:=0;i<=256;i++ {
-        sf.offset = sf.offset + 1
-        sf.Update()
-        time.Sleep(100 * time.Millisecond)
-    }
-
-
-
-    sf.buffer = []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }
-    sf.offset = 0
-    sf.Update()
-}
-
